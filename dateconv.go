@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/user"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -19,7 +21,7 @@ func main() {
 		yearFirst = flag.Bool("yf", false, "Disambiguate 2-digit yeas (yy-mm-dd/dd-mm-yy) as years first")
 		fuzzy     = flag.Bool("fuzzy", false, "Allow more resilient fuzzy matching")
 		format    = flag.String("format", time.RFC850, "Output format, Golang output format rules")
-		config    = flag.String("conf", "~/.dateconv", "Extra config/timezone json mappings")
+		config    = flag.String("conf", "", "Extra config/timezone json mappings")
 		// In order of precedence
 		toUTC    = flag.Bool("utc", false, "Converts date to UTC format")
 		toTs     = flag.Bool("ts", false, "Converts date to Unix timestamp")
@@ -35,14 +37,7 @@ func main() {
 	toParse := flag.Args()[0]
 
 	// Attempt to load config, or fail silently
-	var tzInfos map[string]int
-	conf, err := ioutil.ReadFile(*config)
-	if err == nil {
-		err = json.Unmarshal(conf, &tzInfos)
-		if err != nil {
-			tzInfos = nil
-		}
-	}
+	tzInfos := loadConf(*config)
 
 	parser := &dateparser.Parser{
 		DayFirst:  *dayFirst,
@@ -73,4 +68,33 @@ func main() {
 			fmt.Println(dt.In(loc).Format(*format))
 		}
 	}
+}
+
+func loadConf(path string) map[string]int {
+	if path == "" {
+		// Attempt default at ~/.dateconv
+		homedir, err := getHomeDir()
+		if err != nil {
+			return nil
+		}
+		path = filepath.Join(homedir, ".dateconv")
+	}
+	conf, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	var tzInfos map[string]int
+	err = json.Unmarshal(conf, &tzInfos)
+	if err != nil {
+		return nil
+	}
+	return tzInfos
+}
+
+func getHomeDir() (string, error) {
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+	return usr.HomeDir, nil
 }
