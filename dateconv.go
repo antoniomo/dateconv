@@ -30,24 +30,33 @@ func main() {
 	)
 	flag.Parse()
 
-	if flag.NArg() != 1 {
+	if flag.NArg() > 1 {
 		flag.Usage()
 		os.Exit(1)
 	}
-	toParse := flag.Args()[0]
+	var dt time.Time
+	if flag.NArg() == 1 {
+		var (
+			toParse = flag.Args()[0]
+			err     error
+		)
 
-	// Attempt to load config, or fail silently
-	tzInfos := loadConf(*config)
+		// Attempt to load config, or fail silently
+		tzInfos := loadConf(*config)
 
-	parser := &dateparser.Parser{
-		DayFirst:  *dayFirst,
-		YearFirst: *yearFirst,
-		Fuzzy:     *fuzzy,
-		TZInfos:   tzInfos,
-	}
-	dt, err := parser.Parse(toParse)
-	if err != nil {
-		log.Fatal(err)
+		parser := &dateparser.Parser{
+			DayFirst:  *dayFirst,
+			YearFirst: *yearFirst,
+			Fuzzy:     *fuzzy,
+			TZInfos:   tzInfos,
+		}
+		dt, err = parser.Parse(toParse)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		// Default
+		dt = time.Now()
 	}
 	// Now just print the output in the date on the desired format
 	switch {
