@@ -34,8 +34,10 @@ func main() {
 		flag.Usage()
 		os.Exit(1)
 	}
+
 	var dt time.Time
-	if flag.NArg() == 1 {
+
+	if flag.NArg() == 1 && flag.Args()[0] != "" {
 		var (
 			toParse = flag.Args()[0]
 			err     error
@@ -50,6 +52,7 @@ func main() {
 			Fuzzy:     *fuzzy,
 			TZInfos:   tzInfos,
 		}
+
 		dt, err = parser.Parse(toParse)
 		if err != nil {
 			log.Fatal(err)
@@ -86,17 +89,22 @@ func loadConf(path string) map[string]int {
 		if err != nil {
 			return nil
 		}
+
 		path = filepath.Join(homedir, ".dateconv")
 	}
+
 	conf, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil
 	}
+
 	var tzInfos map[string]int
+
 	err = json.Unmarshal(conf, &tzInfos)
 	if err != nil {
 		return nil
 	}
+
 	return tzInfos
 }
 
@@ -105,5 +113,6 @@ func getHomeDir() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return usr.HomeDir, nil
 }
